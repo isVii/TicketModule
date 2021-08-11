@@ -1,10 +1,11 @@
-import {Application, BaseSlashCommand, SlashCommand } from '@discord-factory/core'
-import {CategoryChannel, CommandInteraction, MessageEmbed } from 'discord.js'
+import { Application, BaseSlashCommand, SlashCommand } from '@discord-factory/core'
+import {CategoryChannel, CommandInteraction, MessageEmbed, TextChannel} from 'discord.js'
 import Logger from '@leadcodedev/logger'
 import Ticket from 'App/ticket/data/Ticket'
+import { GUILD_ID, PARENT_ID } from 'App/ticket/Settings'
 
 @SlashCommand({
-    scope: ['819691605425520731'],
+    scope: GUILD_ID,
     options: {
         name: 'ticket',
         description: 'TicketSlashCommand description',
@@ -23,17 +24,18 @@ import Ticket from 'App/ticket/data/Ticket'
 })
 export default class TicketSlashCommand implements BaseSlashCommand {
     public async run(interaction: CommandInteraction): Promise<void> {
-        let haveTicket
+        let ticket
+        const channel = await interaction.channel as TextChannel
 
         switch (interaction.options.getString('actions', true)) {
             case 'create':
-                haveTicket = await Ticket.findOne({ where: { userId: interaction.user.id } })
+                ticket = await Ticket.findOne({ where: { userId: interaction.user.id } })
 
-                if (haveTicket) {
+                if (ticket) {
                     await interaction.reply('Vous avez déjà un ticket')
                 }
                 else {
-                    const category = interaction.guild?.channels.cache.filter(channel => channel.type === 'GUILD_CATEGORY' && channel.id === '871893316734709841').first() as CategoryChannel
+                    const category = interaction.guild?.channels.cache.filter(channel => channel.type === 'GUILD_CATEGORY' && channel.id === PARENT_ID).first() as CategoryChannel
 
                     if (category?.children.size >= 50) { // for the discord limit
                         await interaction.reply('Il y a actuellement trop de channel merci de patienter.')
@@ -42,7 +44,7 @@ export default class TicketSlashCommand implements BaseSlashCommand {
 
                     const ticket = await interaction.guild?.channels.create(`ticket-${interaction.user.username}`, {
                         type: 'GUILD_TEXT',
-                        parent: '871893316734709841',
+                        parent: PARENT_ID,
                         permissionOverwrites: [{
                             id: '835517109487271997',
                             allow: ['VIEW_CHANNEL'],
@@ -76,15 +78,17 @@ export default class TicketSlashCommand implements BaseSlashCommand {
                 }
                 break
             case 'delete':
-                haveTicket = await Ticket.findOne({ where: { channel: interaction.channel?.id } })
+                ticket = await Ticket.findOne({ where: { channel: channel.id } })
 
-                if (haveTicket) {
+                if (ticket) {
                     await interaction.reply('le ticket se fermera dans 5 secondes')
 
                     setTimeout(async () => {
-                        await interaction.channel?.delete()
-                        Logger.send('success', `Ticket deleted ! Author: ${haveTicket.userId}`)
-                        await haveTicket.remove()
+                        await Promise.all([
+                            channel.delete(),
+                            ticket.remove(),
+                        ])
+                        Logger.send('success', `Ticket deleted ! Author: ${ticket.userId}`)
                     }, 5 * 1000)
                 }
                 else {

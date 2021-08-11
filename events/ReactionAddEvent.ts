@@ -18,9 +18,11 @@ export default class ReactionAddEvent implements BaseEvent {
                     ])
 
                     setTimeout(async () => {
-                        await reaction.message.channel.delete()
+                        await Promise.all([
+                            reaction.message.channel.delete(),
+                            ticket.remove(),
+                        ])
                         Logger.send('success', `Ticket deleted ! Author: ${ticket.userId}`)
-                        await ticket.remove()
                     }, 5 * 1000)
                 }
             }
