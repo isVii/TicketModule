@@ -12,7 +12,9 @@ export default class TicketDeleteEvent implements BaseEvent {
             
             if (ticket) {
                 await ticket.remove()
-                Logger.send('success', `Ticket deleted ! Author: ${ticket.userId}`)
+
+                const user = channel.guild.members.cache.get(ticket.userId)?.user.tag || ticket.userId
+                Logger.send('success', `Ticket deleted ! Author: ${user}`)
             }
         }
     }

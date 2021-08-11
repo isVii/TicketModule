@@ -1,5 +1,5 @@
 import { Application, BaseSlashCommand, SlashCommand } from '@discord-factory/core'
-import {CategoryChannel, CommandInteraction, MessageEmbed, TextChannel} from 'discord.js'
+import { CategoryChannel, CommandInteraction, MessageEmbed, TextChannel } from 'discord.js'
 import Logger from '@leadcodedev/logger'
 import Ticket from 'App/ticket/data/Ticket'
 import { GUILD_ID, PARENT_ID } from 'App/ticket/Settings'
@@ -42,7 +42,7 @@ export default class TicketSlashCommand implements BaseSlashCommand {
                         return
                     }
 
-                    const ticket = await interaction.guild?.channels.create(`ticket-${interaction.user.username}`, {
+                    const ticketChannel = await interaction.guild?.channels.create(`ticket-${interaction.user.username}`, {
                         type: 'GUILD_TEXT',
                         parent: PARENT_ID,
                         permissionOverwrites: [{
@@ -56,7 +56,7 @@ export default class TicketSlashCommand implements BaseSlashCommand {
 
                     await interaction.reply(`Ticket créé ${ticket}`)
 
-                    const embed = await ticket?.send({
+                    const embed = await ticketChannel?.send({
                         embeds: [new MessageEmbed()
                             .setTitle(`Ticket de ${interaction.user.username}`)
                             .setThumbnail(interaction.user.displayAvatarURL())
@@ -74,7 +74,7 @@ export default class TicketSlashCommand implements BaseSlashCommand {
                         embed?.react('🎫'),
                     ])
 
-                    Logger.send('success', `Ticket created ! Author: ${interaction.user.username}`)
+                    Logger.send('success', `Ticket created ! Author: ${interaction.user.tag}`)
                 }
                 break
             case 'delete':
@@ -88,7 +88,8 @@ export default class TicketSlashCommand implements BaseSlashCommand {
                             channel.delete(),
                             ticket.remove(),
                         ])
-                        Logger.send('success', `Ticket deleted ! Author: ${ticket.userId}`)
+                        const user = interaction.guild?.members.cache.get(ticket.userId)?.user.tag || ticket.userId
+                        Logger.send('success', `Ticket deleted ! Author: ${user}`)
                     }, 5 * 1000)
                 }
                 else {

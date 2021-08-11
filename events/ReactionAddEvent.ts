@@ -22,7 +22,8 @@ export default class ReactionAddEvent implements BaseEvent {
                             reaction.message.channel.delete(),
                             ticket.remove(),
                         ])
-                        Logger.send('success', `Ticket deleted ! Author: ${ticket.userId}`)
+                        const user = reaction.message.guild?.members.cache.get(ticket.userId)?.user.tag || ticket.userId
+                        Logger.send('success', `Ticket deleted ! Author: ${user}`)
                     }, 5 * 1000)
                 }
             }
